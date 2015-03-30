@@ -1,0 +1,38 @@
+# -*- coding: cp1252 -*-
+#import socket module
+from socket import *
+
+serverPort = 12000
+#Prepare a server socket
+serverSocket = socket(AF_INET, SOCK_STREAM)
+#serverSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+serverSocket.bind(('',serverPort))
+serverSocket.listen(1)
+
+while True:
+    #Establish the connection
+    print 'Ready to serve...'
+    connectionSocket, addr = serverSocket.accept()
+    try:
+        message = connectionSocket.recv(2048)
+        filename = message.split()[1]
+        print "served: " + filename
+        f = open(filename[1:])
+        outputdata = f.read()
+        #Send one HTTP header line into socket
+        header = "HTTP/1.1 200 OK\r\n\r\n"
+        connectionSocket.send(header)
+        #Send the content of the requested file to the client
+        for i in range(0, len(outputdata)):
+            connectionSocket.send(outputdata[i])
+        connectionSocket.close()
+    except IOError:
+        #Send response message for file not found
+        print "file not found"
+        header = "HTTP/1.1 404 Not Found\r\n\r\n"
+        connectionSocket.send(header)
+        error404 = "<html><body><h1>Error 404</h1></p>File not found</body></html>"
+        connectionSocket.send(error404)
+        #Close client socket
+        connectionSocket.close()
+serverSocket.close()
